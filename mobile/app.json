@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Antigravity Mobile",
+    "slug": "antigravity-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "backgroundColor": "#ffffff"
+    },
+    "web": {
+      "backgroundColor": "#ffffff"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
