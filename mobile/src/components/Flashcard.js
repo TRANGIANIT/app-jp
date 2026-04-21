@@ -22,14 +22,18 @@ export default function Flashcard({ card, onSwipe }) {
         }).start();
     };
 
-    const handleSwipeSubmit = (direction) => {
-        const quality = direction === 'right' ? 'good' : 'again';
+    const handleQualitySelect = (quality) => {
         onSwipe(quality);
         
         // Reset card immediately 
         pan.setValue({ x: 0, y: 0 });
         flipAnim.setValue(0);
         setIsFlipped(false);
+    };
+
+    const handleSwipeSubmit = (direction) => {
+        const quality = direction === 'right' ? 'good' : 'again';
+        handleQualitySelect(quality);
     };
 
     // Pan Responder setup for Tinder swipe
@@ -158,16 +162,16 @@ export default function Flashcard({ card, onSwipe }) {
                             )}
                             
                             <View style={styles.buttonRow}>
-                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#fed7d7'}]} onPress={() => onSwipe('again')}>
+                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#fed7d7'}]} onPress={() => handleQualitySelect('again')}>
                                     <Text style={styles.qButtonText}>Again (1d)</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#fef3c7'}]} onPress={() => onSwipe('hard')}>
+                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#fef3c7'}]} onPress={() => handleQualitySelect('hard')}>
                                     <Text style={styles.qButtonText}>Hard (3d)</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#d1fae5'}]} onPress={() => onSwipe('good')}>
+                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#d1fae5'}]} onPress={() => handleQualitySelect('good')}>
                                     <Text style={styles.qButtonText}>Good (7d)</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#dbeafe'}]} onPress={() => onSwipe('easy')}>
+                                <TouchableOpacity style={[styles.qButton, {backgroundColor: '#dbeafe'}]} onPress={() => handleQualitySelect('easy')}>
                                     <Text style={styles.qButtonText}>Easy (21d)</Text>
                                 </TouchableOpacity>
                             </View>

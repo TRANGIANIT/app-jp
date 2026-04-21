@@ -22,6 +22,8 @@ export default function QuizScreen() {
     const [score, setScore] = useState(0);
     const [userAnswers, setUserAnswers] = useState([]);
     const [isSpacedRepMode, setIsSpacedRepMode] = useState(false);
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [showExplanation, setShowExplanation] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -45,6 +47,10 @@ export default function QuizScreen() {
     }, []);
 
     const toggleDay = (day) => {
+        if (!user && day !== 1) {
+            Alert.alert('Khóa tính năng', 'Vui lòng đăng nhập để luyện tập bài này. Khách chỉ có thể luyện tập Ngày 1.');
+            return;
+        }
         if (selectedDays.includes(day)) {
             setSelectedDays(selectedDays.filter(d => d !== day));
         } else {
@@ -84,7 +90,8 @@ export default function QuizScreen() {
 
     const startShuffleQuiz = () => {
         setIsSpacedRepMode(false);
-        generateQuizFromPool(flashcardsData.slice(0, 20));
+        const pool = user ? flashcardsData : flashcardsData.filter(c => c.day === 1);
+        generateQuizFromPool(pool.slice(0, 20));
     };
 
     const generateQuizFromPool = (pool) => {
@@ -105,9 +112,15 @@ export default function QuizScreen() {
         setCurrentQuestionIndex(0);
         setScore(0);
         setUserAnswers([]);
+        setSelectedOption(null);
+        setShowExplanation(false);
     };
 
     const handleAnswer = async (option) => {
+        if (showExplanation) return;
+        setSelectedOption(option);
+        setShowExplanation(true);
+
         const currentQ = questions[currentQuestionIndex];
         const isCorrect = option.id === currentQ.card.id;
         if (isCorrect) setScore(s => s + 1);
@@ -135,11 +148,17 @@ export default function QuizScreen() {
                 console.log('Error syncing quiz progress:', error);
             }
         }
+    };
 
+    const handleNextQuestion = () => {
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(i => i + 1);
+            setSelectedOption(null);
+            setShowExplanation(false);
         } else {
             setQuizState('result');
+            setSelectedOption(null);
+            setShowExplanation(false);
         }
     };
 
@@ -187,15 +206,18 @@ export default function QuizScreen() {
             <View style={styles.container}>
                 <View style={styles.header}><Text style={styles.title}>Chọn ngày ôn tập</Text></View>
                 <ScrollView contentContainerStyle={styles.dayGrid}>
-                    {availableDays.map(day => (
-                        <TouchableOpacity 
-                            key={day} 
-                            style={[styles.dayChip, selectedDays.includes(day) ? styles.dayChipActive : null]} 
-                            onPress={() => toggleDay(day)}
-                        >
-                            <Text style={[styles.dayText, selectedDays.includes(day) ? styles.dayTextActive : null]}>Ngày {day}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {availableDays.map(day => {
+                        const isLocked = !user && day !== 1;
+                        return (
+                            <TouchableOpacity 
+                                key={day} 
+                                style={[styles.dayChip, selectedDays.includes(day) ? styles.dayChipActive : null, isLocked ? { opacity: 0.5 } : null]} 
+                                onPress={() => toggleDay(day)}
+                            >
+                                <Text style={[styles.dayText, selectedDays.includes(day) ? styles.dayTextActive : null]}>Ngày {day} {isLocked ? '🔒' : ''}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
                 <View style={styles.footer}>
                     <TouchableOpacity style={styles.secondaryButton} onPress={() => setQuizState('menu')}><Text style={styles.secondaryButtonText}>Quay lại</Text></TouchableOpacity>
@@ -208,7 +230,7 @@ export default function QuizScreen() {
     if (quizState === 'active') {
         const q = questions[currentQuestionIndex];
         return (
-            <View style={styles.container}>
+            <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
                 <View style={styles.quizHeader}>
                     <Text style={styles.quizProgress}>Câu {currentQuestionIndex + 1} / {questions.length}</Text>
                     <View style={styles.quizProgressBar}><View style={[styles.quizProgressFill, { width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }]} /></View>
@@ -218,13 +240,61 @@ export default function QuizScreen() {
                     <Text style={styles.questionText}>{q.card.grammar}</Text>
                 </View>
                 <View style={styles.optionsContainer}>
-                    {q.options.map((opt) => (
-                        <TouchableOpacity key={opt.id} style={styles.answerButton} onPress={() => handleAnswer(opt)}>
-                            <Text style={styles.answerText}>{opt.meaning}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {q.options.map((opt) => {
+                        let btnStyle = styles.answerButton;
+                        let textStyle = styles.answerText;
+                        if (showExplanation) {
+                            if (opt.id === q.card.id) {
+                                btnStyle = [styles.answerButton, styles.answerButtonCorrect];
+                                textStyle = [styles.answerText, styles.answerTextCorrect];
+                            } else if (opt.id === selectedOption?.id) {
+                                btnStyle = [styles.answerButton, styles.answerButtonWrong];
+                                textStyle = [styles.answerText, styles.answerTextWrong];
+                            } else {
+                                btnStyle = [styles.answerButton, { opacity: 0.5 }];
+                            }
+                        }
+                        return (
+                            <TouchableOpacity key={opt.id} style={btnStyle} onPress={() => handleAnswer(opt)} activeOpacity={showExplanation ? 1 : 0.7}>
+                                <Text style={textStyle}>{opt.meaning}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
-            </View>
+
+                {showExplanation && (
+                    <View style={styles.explanationContainer}>
+                        <View style={[styles.feedbackBadge, selectedOption?.id === q.card.id ? styles.feedbackCorrect : styles.feedbackWrong]}>
+                            <Text style={styles.feedbackText}>
+                                {selectedOption?.id === q.card.id ? '✅ CHÍNH XÁC' : '❌ SAI PHẦN NÀY'}
+                            </Text>
+                        </View>
+                        <Text style={styles.explanationTitle}>Giải thích chi tiết:</Text>
+                        <Text style={styles.explanationContent}>
+                            <Text style={{fontWeight: 'bold'}}>• Ý nghĩa: </Text>{q.card.meaning}
+                        </Text>
+                        <Text style={styles.explanationContent}>
+                            <Text style={{fontWeight: 'bold'}}>• Cách dùng: </Text>{q.card.usage}
+                        </Text>
+                        {q.card.note ? (
+                            <Text style={styles.explanationContent}>
+                                <Text style={{fontWeight: 'bold'}}>• Lưu ý: </Text>{q.card.note}
+                            </Text>
+                        ) : null}
+
+                        {q.card.examples && q.card.examples.length > 0 ? (
+                            <View style={styles.exampleBox}>
+                                <Text style={styles.exampleJp}>{q.card.examples[0].jp}</Text>
+                                <Text style={styles.exampleVi}>{q.card.examples[0].vi}</Text>
+                            </View>
+                        ) : null}
+                        
+                        <TouchableOpacity style={styles.nextQuestionButton} onPress={handleNextQuestion}>
+                            <Text style={styles.nextQuestionText}>{currentQuestionIndex < questions.length - 1 ? 'Câu tiếp theo' : 'Xem kết quả'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </ScrollView>
         );
     }
 
@@ -282,7 +352,23 @@ const styles = StyleSheet.create({
     questionText: { fontSize: 32, fontWeight: 'bold', textAlign: 'center' },
     optionsContainer: { paddingHorizontal: 20 },
     answerButton: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#e2e8f0' },
+    answerButtonCorrect: { backgroundColor: '#f0fff4', borderColor: '#48bb78', borderWidth: 2 },
+    answerButtonWrong: { backgroundColor: '#fff5f5', borderColor: '#e53e3e', borderWidth: 2 },
     answerText: { fontSize: 16, textAlign: 'center' },
+    answerTextCorrect: { color: '#276749', fontWeight: 'bold' },
+    answerTextWrong: { color: '#c53030', fontWeight: 'bold' },
+    explanationContainer: { padding: 20, marginHorizontal: 20, backgroundColor: '#ebf8ff', borderRadius: 16, marginTop: 10, borderWidth: 1, borderColor: '#bee3f8' },
+    feedbackBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 12 },
+    feedbackCorrect: { backgroundColor: '#c6f6d5' },
+    feedbackWrong: { backgroundColor: '#fed7d7' },
+    feedbackText: { fontSize: 13, fontWeight: 'bold', color: '#2d3748' },
+    explanationTitle: { fontSize: 16, fontWeight: 'bold', color: '#2b6cb0', marginBottom: 8 },
+    explanationContent: { fontSize: 15, color: '#2c5282', marginBottom: 6, lineHeight: 22 },
+    exampleBox: { marginTop: 8, padding: 12, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#bee3f8' },
+    exampleJp: { fontSize: 15, fontWeight: '500', color: '#2b6cb0', marginBottom: 4 },
+    exampleVi: { fontSize: 14, color: '#4a5568', fontStyle: 'italic' },
+    nextQuestionButton: { backgroundColor: '#4299e1', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+    nextQuestionText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     resultHeader: { padding: 40, alignItems: 'center', backgroundColor: '#fff' },
     resultEmoji: { fontSize: 64 },
     resultTitle: { fontSize: 24, fontWeight: 'bold' },

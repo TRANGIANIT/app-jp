@@ -100,6 +100,10 @@ export default function JLPTTestScreen() {
     }, [testState, timeLeft]);
 
     const handleLevelSelect = (level) => {
+        if (!user && level !== 'N5') {
+            Alert.alert('Khóa tính năng', 'Vui lòng đăng nhập để thi thử các cấp độ cao hơn. Khách chỉ có thể thi thử N5.');
+            return;
+        }
         setSelectedLevel(level);
         Alert.alert(
             'Bắt đầu thi thử',
@@ -164,18 +168,21 @@ export default function JLPTTestScreen() {
                 </View>
 
                 <View style={styles.levels}>
-                    {['N5', 'N4', 'N3', 'N2', 'N1'].map((level) => (
-                        <TouchableOpacity key={level} style={styles.levelCard} onPress={() => handleLevelSelect(level)}>
-                            <View style={styles.levelBadge}>
-                                <Text style={styles.levelText}>{level}</Text>
-                            </View>
-                            <View style={styles.levelInfo}>
-                                <Text style={styles.levelTitle}>Kỳ thi mô phỏng {level}</Text>
-                                <Text style={styles.levelDesc}>Cấu trúc 100% giống đề thi thật</Text>
-                            </View>
-                            <Text style={styles.arrow}>›</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {['N5', 'N4', 'N3', 'N2', 'N1'].map((level) => {
+                        const isLocked = !user && level !== 'N5';
+                        return (
+                            <TouchableOpacity key={level} style={[styles.levelCard, isLocked ? { opacity: 0.6 } : null]} onPress={() => handleLevelSelect(level)}>
+                                <View style={[styles.levelBadge, isLocked ? { backgroundColor: '#a0aec0' } : null]}>
+                                    <Text style={styles.levelText}>{level}</Text>
+                                </View>
+                                <View style={styles.levelInfo}>
+                                    <Text style={styles.levelTitle}>Kỳ thi mô phỏng {level} {isLocked ? '🔒' : ''}</Text>
+                                    <Text style={styles.levelDesc}>Cấu trúc 100% giống đề thi thật</Text>
+                                </View>
+                                <Text style={styles.arrow}>{isLocked ? '🔒' : '›'}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </ScrollView>
         );

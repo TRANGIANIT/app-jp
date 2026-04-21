@@ -62,10 +62,10 @@ export default function ProfileScreen() {
         let dueCount = 0;
         let learningCount = 0;
         let reviewCount = 0;
-        
+
         // Track unique days with activity
         const activityDays = new Set();
-        
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayTimestamp = today.getTime();
@@ -73,7 +73,7 @@ export default function ProfileScreen() {
         Object.keys(cardProgress).forEach(cardId => {
             const progress = cardProgress[cardId];
             newCount--;
-            
+
             if (progress.last_reviewed) {
                 const reviewDate = new Date(progress.last_reviewed);
                 reviewDate.setHours(0, 0, 0, 0);
@@ -94,12 +94,12 @@ export default function ProfileScreen() {
         // Calculate Streak
         let streak = 0;
         const sortedDays = Array.from(activityDays).sort((a, b) => b - a); // Newest first
-        
+
         let checkDate = todayTimestamp;
         // Search if today or yesterday was active to start/continue streak
         if (activityDays.has(todayTimestamp) || activityDays.has(todayTimestamp - 86400000)) {
             if (!activityDays.has(todayTimestamp)) checkDate -= 86400000;
-            
+
             while (activityDays.has(checkDate)) {
                 streak++;
                 checkDate -= 86400000;
@@ -136,7 +136,7 @@ export default function ProfileScreen() {
     if (!user) {
         return (
             <ScrollView style={styles.container} contentContainerStyle={styles.center}>
-                <AuthModal onAuthSuccess={() => {}} />
+                <AuthModal onAuthSuccess={() => { }} />
             </ScrollView>
         );
     }
@@ -147,9 +147,9 @@ export default function ProfileScreen() {
                 <View style={styles.avatarPlaceholder}>
                     <Text style={styles.avatarText}>{user.email ? user.email[0].toUpperCase() : 'U'}</Text>
                 </View>
-                <Text style={styles.userName}>{user.displayName || 'Học viên Antigravity'}</Text>
+                <Text style={styles.userName}>{user.displayName || 'Học viên NIHONGO Roku 76'}</Text>
                 <Text style={styles.userEmail}>{user.email}</Text>
-                
+
                 <TouchableOpacity style={styles.editButton}>
                     <Text style={styles.editButtonText}>Chỉnh sửa hồ sơ</Text>
                 </TouchableOpacity>
@@ -189,7 +189,7 @@ export default function ProfileScreen() {
                     <Text style={[styles.menuText, { color: isPlaying ? '#d97706' : '#2d3748' }]}>
                         {isPlaying ? '🎵 Tắt Nhạc Nền' : '🎵 Bật Nhạc Nền (Lofi)'}
                     </Text>
-                    <Text style={[styles.menuArrow, {color: isPlaying ? '#d97706' : '#cbd5e0'}]}>›</Text>
+                    <Text style={[styles.menuArrow, { color: isPlaying ? '#d97706' : '#cbd5e0' }]}>›</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => setShowStatsModal(true)}>
                     <Text style={styles.menuText}>Thống kê Spaced Repetition</Text>
@@ -213,7 +213,7 @@ export default function ProfileScreen() {
                             <Text style={styles.modalLabel}>Nhắc nhở học tập hàng ngày (9:00 AM)</Text>
                             <Switch value={notifsEnabled} onValueChange={toggleNotifications} />
                         </View>
-                        <Text style={styles.modalDesc}>Antigravity sẽ nhắc bạn khi có thẻ đến hạn ôn tập.</Text>
+                        <Text style={styles.modalDesc}>NIHONGO Roku76 sẽ nhắc bạn khi có thẻ đến hạn ôn tập.</Text>
                         <TouchableOpacity style={styles.closeBtn} onPress={() => setShowNotifModal(false)}>
                             <Text style={styles.closeBtnText}>Đóng</Text>
                         </TouchableOpacity>
@@ -226,7 +226,7 @@ export default function ProfileScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Thống kê chi tiết</Text>
-                        
+
                         <View style={styles.detailStat}>
                             <Text style={styles.detailLabel}>Tổng số ngữ pháp:</Text>
                             <Text style={styles.detailValue}>{flashcardsData.length}</Text>
@@ -248,7 +248,7 @@ export default function ProfileScreen() {
                             <Text style={styles.detailValue}>{((stats.review / flashcardsData.length) * 100).toFixed(1)}%</Text>
                         </View>
 
-                        <TouchableOpacity style={[styles.closeBtn, {marginTop: 20}]} onPress={() => setShowStatsModal(false)}>
+                        <TouchableOpacity style={[styles.closeBtn, { marginTop: 20 }]} onPress={() => setShowStatsModal(false)}>
                             <Text style={styles.closeBtnText}>Đóng</Text>
                         </TouchableOpacity>
                     </View>

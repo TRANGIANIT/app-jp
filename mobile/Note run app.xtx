@@ -1,1 +1,5 @@
 npx expo start --tunnel
+
+Điều nên làm sau khi hoàn thiện app:
+1. Hỏi AI app có bị lỗi bảo mật không?
+2. App có thể deploy lên Google Play Store và App Store không?

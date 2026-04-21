@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Antigravity Mobile",
-    "slug": "antigravity-mobile",
+    "name": "NIHONGO ROKU76 Mobile",
+    "slug": "nihongo-roku76-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -9,16 +9,26 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nihongoroku76.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "package": "com.nihongoroku76.mobile"
     },
     "web": {
       "backgroundColor": "#ffffff"
     },
     "plugins": [
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8a49a791-e852-44e8-bb2c-9c6f38909b12"
+      }
+    }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, View, FlatList, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { ref, onValue, set, update } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, database } from '../firebase/config';
@@ -41,9 +41,11 @@ export default function FlashcardsScreen() {
     const filteredCards = useMemo(() => {
         const today = new Date().setHours(0, 0, 0, 0);
         return flashcardsData.filter(c => {
+            if (!user && c.day !== 1) return false;
+
             const dayMatch = selectedDay === null || c.day === selectedDay;
             const prog = cardProgress[c.id];
-            
+
             if (showOnlyDue) {
                 // Thẻ Mới (chưa có progress) hoặc Thẻ đã đến hạn
                 if (!prog) return dayMatch;
@@ -51,13 +53,17 @@ export default function FlashcardsScreen() {
             }
             return dayMatch;
         });
-    }, [selectedDay, showOnlyDue, cardProgress]);
+    }, [selectedDay, showOnlyDue, cardProgress, user]);
 
     // Thẻ hiện tại trong danh sách đã lọc
     const currentCard = filteredCards[currentIndex];
 
     // Reset index khi đổi bộ lọc
     const handleSelectDay = (day) => {
+        if (!user && day !== 1 && day !== null) {
+            Alert.alert('Khóa tính năng', 'Vui lòng đăng nhập để học bài này. Khách chỉ có thể học Ngày 1.');
+            return;
+        }
         setSelectedDay(day);
         setCurrentIndex(0);
     };
@@ -81,7 +87,7 @@ export default function FlashcardsScreen() {
         };
 
         const newProg = calculateNextReview(currentProg, quality);
-        
+
         // Sync with Firebase
         try {
             const progressRef = ref(database, `users/${user.uid}/card_progress/${currentCard.id}`);
@@ -105,9 +111,16 @@ export default function FlashcardsScreen() {
             {/* Filter Section */}
             <View style={styles.filterWrapper}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[styles.dueToggle, showOnlyDue ? styles.dueToggleActive : null]}
-                        onPress={() => { setShowOnlyDue(!showOnlyDue); setCurrentIndex(0); }}
+                        onPress={() => {
+                            if (!user) {
+                                Alert.alert('Khóa tính năng', 'Vui lòng đăng nhập để sử dụng tính năng ôn tập Spaced Repetition.');
+                                return;
+                            }
+                            setShowOnlyDue(!showOnlyDue); 
+                            setCurrentIndex(0); 
+                        }}
                     >
                         <Text style={[styles.dueToggleText, showOnlyDue ? styles.dueToggleTextActive : null]}>
                             🔔 {showOnlyDue ? 'Đang lọc: Cần ôn' : 'Tất cả thẻ'}
@@ -116,17 +129,20 @@ export default function FlashcardsScreen() {
 
                     <View style={styles.divider} />
 
-                    {days.map((day) => (
-                        <TouchableOpacity 
-                            key={String(day)} 
-                            style={[styles.filterChip, selectedDay === day ? styles.filterChipActive : null]}
-                            onPress={() => handleSelectDay(day)}
-                        >
-                            <Text style={[styles.filterText, selectedDay === day ? styles.filterTextActive : null]}>
-                                {day === null ? 'Toàn bộ bài' : `Ngày ${day}`}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {days.map((day) => {
+                        const isLocked = !user && day !== 1 && day !== null;
+                        return (
+                            <TouchableOpacity
+                                key={String(day)}
+                                style={[styles.filterChip, selectedDay === day ? styles.filterChipActive : null, isLocked ? { opacity: 0.5 } : null]}
+                                onPress={() => handleSelectDay(day)}
+                            >
+                                <Text style={[styles.filterText, selectedDay === day ? styles.filterTextActive : null]}>
+                                    {day === null ? 'Toàn bộ bài' : `Ngày ${day}`} {isLocked ? '🔒' : ''}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
             </View>
 
@@ -137,16 +153,16 @@ export default function FlashcardsScreen() {
             ) : (
                 <>
                     <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>
-                    Tiến độ: {filteredCards.length > 0 ? currentIndex + 1 : 0} / {filteredCards.length}
-                </Text>
-                <View style={styles.progressBar}>
-                    <View style={[
-                        styles.progressFill, 
-                        { width: filteredCards.length > 0 ? `${((currentIndex + 1) / filteredCards.length) * 100}%` : '0%' }
-                    ]} />
-                </View>
-            </View>
+                        <Text style={styles.progressText}>
+                            Tiến độ: {filteredCards.length > 0 ? currentIndex + 1 : 0} / {filteredCards.length}
+                        </Text>
+                        <View style={styles.progressBar}>
+                            <View style={[
+                                styles.progressFill,
+                                { width: filteredCards.length > 0 ? `${((currentIndex + 1) / filteredCards.length) * 100}%` : '0%' }
+                            ]} />
+                        </View>
+                    </View>
 
                     <View style={styles.cardWrapper}>
                         {currentCard ? (
